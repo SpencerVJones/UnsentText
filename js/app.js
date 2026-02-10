@@ -1,8 +1,7 @@
 // npm install firebase
 
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "firebase/firestore";
-import { where } from "firebase/firestore"; 
+import { getFirestore, collection, addDoc, serverTimestamp, query, orderBy, onSnapshot, where } from "firebase/firestore";
 
 // Firebase Configuration
 const firebaseConfig = {
@@ -19,23 +18,37 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app); // Initialize Firestore
 
-// DOM Elements
-const messageContainer = document.getElementById('messages');
-const sendButton = document.getElementById('send-button');
-const sentContainer = document.getElementById("sent-container");
-const searchButton = document.querySelector('#search-bar button');
-const searchInput = document.querySelector('#name-search');
+let unsubscribeFromMessages = null;
 
-// Add event listener for send button
-sendButton.addEventListener('click', sendMessage);
-// Add event listener for search button
-searchButton.addEventListener('click', searchMessages);
+// DOM Elements
+const sendButton = document.getElementById("send-button");
+const searchButton = document.querySelector("#search-bar button");
+const searchInput = document.querySelector("#name-search");
+
+if (sendButton) sendButton.addEventListener("click", sendMessage);
+if (searchButton) searchButton.addEventListener("click", searchMessages);
+if (searchInput) {
+  searchInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      searchMessages();
+    }
+  });
+  searchInput.addEventListener("search", () => {
+    searchMessages();
+  });
+}
 
 // The sendMessage function
 async function sendMessage() {
-  let inputField = document.getElementById("message-input");
-  let nameField = document.getElementById("chat-name");
-  let messageContainer = document.getElementById("messages");
+  const inputField = document.getElementById("message-input");
+  const nameField = document.getElementById("chat-name");
+  const chatMessagesContainer = document.getElementById("messages");
+
+  if (!inputField || !nameField || !chatMessagesContainer) {
+    console.error("Missing required chat elements in the DOM.");
+    return;
+  }
 
   let messageText = inputField.value.trim();
   let chatName = nameField.value.trim();
@@ -59,8 +72,8 @@ async function sendMessage() {
   newMessage.textContent = messageText;
 
   // Append the new message
-  messageContainer.appendChild(newMessage);
-  messageContainer.scrollTop = messageContainer.scrollHeight;
+  chatMessagesContainer.appendChild(newMessage);
+  chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
 
   // Save message to Firebase Firestore
   try {
@@ -92,6 +105,8 @@ async function sendMessage() {
 
 // Search messages function
 function searchMessages() {
+  if (!searchInput) return;
+
   const searchText = searchInput.value.trim();
 
   // If no text entered in the search bar, reset and display all messages
@@ -100,102 +115,130 @@ function searchMessages() {
     return;
   }
 
-  // Order by timestamp in descending order (newest first)
   const q = query(
     collection(db, "messages"),
-    orderBy("timestamp", "desc"),
-    where("to", "==", searchText) // Filter messages by the name entered in search bar
+    where("to", "==", searchText), // Filter messages by the name entered in search bar
   );
 
-// Clear previous unsent messages
-const unsentContainer = document.getElementById("unsent-container");
-unsentContainer.innerHTML = ""; 
+  const unsentContainer = document.getElementById("unsent-container");
+  if (!unsentContainer) return;
 
-// Fetch the filtered messages
-onSnapshot(q, (snapshot) => {
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    const recipient = data.to;
-    const messageText = data.text;
+  if (typeof searchInput.blur === "function") searchInput.blur();
+  const unsentSection = document.getElementById("unsent-messages");
+  if (unsentSection) unsentSection.scrollIntoView({ behavior: "smooth", block: "start" });
 
-    // Create chat screen
-    let chatDiv = document.createElement("div");
-    chatDiv.classList.add("iphone-chat");
+  if (unsubscribeFromMessages) unsubscribeFromMessages();
+  unsubscribeFromMessages = onSnapshot(
+    q,
+    (snapshot) => {
+      unsentContainer.innerHTML = "";
 
-    // Create header for recipient name
-    let headerDiv = document.createElement("div");
-    headerDiv.classList.add("chat-header");
-    headerDiv.textContent = recipient;
+      const sortedDocs = snapshot.docs.slice().sort((a, b) => {
+        const aMillis = a.data()?.timestamp?.toMillis?.() ?? 0;
+        const bMillis = b.data()?.timestamp?.toMillis?.() ?? 0;
+        return bMillis - aMillis;
+      });
 
-    // Create message container
-    let chatBody = document.createElement("div");
-    chatBody.classList.add("chat-body");
+      if (sortedDocs.length === 0) {
+        const emptyState = document.createElement("p");
+        emptyState.classList.add("no-results");
+        emptyState.textContent = `No messages found for "${searchText}".`;
+        unsentContainer.appendChild(emptyState);
+        return;
+      }
 
-    // Create message bubble with corrected spacing
-    let messageDiv = document.createElement("div");
-    messageDiv.classList.add("message-box", "sent-message");
-    messageDiv.textContent = messageText;
+      sortedDocs.forEach((doc) => {
+        const data = doc.data();
+        const recipient = data.to;
+        const messageText = data.text;
 
-    // Create typing animation on the left
-    let typingDiv = document.createElement("div");
-    typingDiv.classList.add("typing-animation");
+        // Create chat screen
+        let chatDiv = document.createElement("div");
+        chatDiv.classList.add("iphone-chat");
 
-    // Append everything
-    chatBody.appendChild(typingDiv);
-    chatBody.appendChild(messageDiv);
-    chatDiv.appendChild(headerDiv);
-    chatDiv.appendChild(chatBody);
-    unsentContainer.appendChild(chatDiv);
-  });
-});
+        // Create header for recipient name
+        let headerDiv = document.createElement("div");
+        headerDiv.classList.add("chat-header");
+        headerDiv.textContent = recipient;
+
+        // Create message container
+        let chatBody = document.createElement("div");
+        chatBody.classList.add("chat-body");
+
+        // Create message bubble with corrected spacing
+        let messageDiv = document.createElement("div");
+        messageDiv.classList.add("message-box", "sent-message");
+        messageDiv.textContent = messageText;
+
+        // Create typing animation on the left
+        let typingDiv = document.createElement("div");
+        typingDiv.classList.add("typing-animation");
+
+        // Append everything
+        chatBody.appendChild(typingDiv);
+        chatBody.appendChild(messageDiv);
+        chatDiv.appendChild(headerDiv);
+        chatDiv.appendChild(chatBody);
+        unsentContainer.appendChild(chatDiv);
+      });
+    },
+    (error) => console.error("Error fetching filtered messages", error),
+  );
 }
 
 // Retrieving sent messages
 function displayMessages() {
   const unsentContainer = document.getElementById("unsent-container");
+  if (!unsentContainer) return;
+
   unsentContainer.innerHTML = ""; // Clear previous messages
 
   // Order by timestamp in descending order (newest first)
   const q = query(collection(db, "messages"), orderBy("timestamp", "desc"));
 
-  onSnapshot(q, (snapshot) => {
-    unsentContainer.innerHTML = ""; // Clear before re-rendering
+  if (unsubscribeFromMessages) unsubscribeFromMessages();
+  unsubscribeFromMessages = onSnapshot(
+    q,
+    (snapshot) => {
+      unsentContainer.innerHTML = ""; // Clear before re-rendering
 
-    snapshot.forEach((doc) => {
-      const data = doc.data();
-      const recipient = data.to;
-      const messageText = data.text;
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const recipient = data.to;
+        const messageText = data.text;
 
-      // Create chat screen
-      let chatDiv = document.createElement("div");
-      chatDiv.classList.add("iphone-chat");
+        // Create chat screen
+        let chatDiv = document.createElement("div");
+        chatDiv.classList.add("iphone-chat");
 
-      // Create header for recipient name 
-      let headerDiv = document.createElement("div");
-      headerDiv.classList.add("chat-header");
-      headerDiv.textContent = recipient;
+        // Create header for recipient name 
+        let headerDiv = document.createElement("div");
+        headerDiv.classList.add("chat-header");
+        headerDiv.textContent = recipient;
 
-      // Create message container
-      let chatBody = document.createElement("div");
-      chatBody.classList.add("chat-body");
+        // Create message container
+        let chatBody = document.createElement("div");
+        chatBody.classList.add("chat-body");
 
-      // Create message bubble with corrected spacing
-      let messageDiv = document.createElement("div");
-      messageDiv.classList.add("message-box", "sent-message");
-      messageDiv.textContent = messageText;
+        // Create message bubble with corrected spacing
+        let messageDiv = document.createElement("div");
+        messageDiv.classList.add("message-box", "sent-message");
+        messageDiv.textContent = messageText;
 
-      // Create typing animation on the left
-      let typingDiv = document.createElement("div");
-      typingDiv.classList.add("typing-animation");
+        // Create typing animation on the left
+        let typingDiv = document.createElement("div");
+        typingDiv.classList.add("typing-animation");
 
-      // Append everything
-      chatBody.appendChild(typingDiv);
-      chatBody.appendChild(messageDiv);
-      chatDiv.appendChild(headerDiv);
-      chatDiv.appendChild(chatBody);
-      unsentContainer.appendChild(chatDiv);
-    });
-  });
+        // Append everything
+        chatBody.appendChild(typingDiv);
+        chatBody.appendChild(messageDiv);
+        chatDiv.appendChild(headerDiv);
+        chatDiv.appendChild(chatBody);
+        unsentContainer.appendChild(chatDiv);
+      });
+    },
+    (error) => console.error("Error fetching messages", error),
+  );
 }
 
 // Call function to start displaying messages
