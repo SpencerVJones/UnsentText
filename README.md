@@ -30,7 +30,7 @@
 <div align="center">
 
 
-![License](https://img.shields.io/github/license/SpencerVJones/UnsentText?style=for-the-badge)
+![License](https://img.shields.io/badge/License-Proprietary-black?style=for-the-badge)
 ![Contributors](https://img.shields.io/github/contributors/SpencerVJones/UnsentText?style=for-the-badge)
 ![Forks](https://img.shields.io/github/forks/SpencerVJones/UnsentText?style=for-the-badge)
 ![Stargazers](https://img.shields.io/github/stars/SpencerVJones/UnsentText?style=for-the-badge)
@@ -65,8 +65,7 @@
   - [How to Run](#how-to-run)
 - [Usage](#usage)
 - [Roadmap](#roadmap)
-- [Contributing](#contributing)
-	- [Contributors](#contributors)
+- [Contributors](#contributors)
 - [License](#license)
 - [Contact](#contact)
 
@@ -75,7 +74,6 @@
 It’s intentionally minimal: write freely, keep things private, and (optionally) treat it like a personal draft/journal space.
 
 This repository is structured as a **static site** bundled with **Webpack**, with a `dist/` output folder suitable for GitHub Pages-style deployment.  
-
 
 
 ## Technologies Used
@@ -144,37 +142,28 @@ npm run build   # create production build in dist/
 ## Usage
 -   Open the dev server URL (if running locally), or visit the deployed site above.
 -   Write your message.
--   Extend the project by adding local persistence (`localStorage`), tags, export options, etc.
  
 ## Roadmap
- - [ ] Local persistence (`localStorage`) for drafts
- - [ ] Search + filtering
- - [ ] Tags / recipients / mood labels
- - [ ] Export drafts (TXT / JSON)
- - [ ] Optional passcode lock (client-side)
- - [ ] Better PWA offline support (service worker)
- - [ ]  Mobile-first polish & accessibility pass
+ - [ ] Tags / mood labels with filtering 
+ - [ ] Mobile-first polish & accessibility pass
 
 See open issues for a full list of proposed features (and known issues).
  
- 
-## Contributing
-Contributions are welcome! Feel free to submit issues or pull requests with bug fixes, improvements, or new features.
-- Fork the Project
-- Create your Feature Branch (git checkout -b feature/AmazingFeature)
-- Commit your Changes (git commit -m 'Add some AmazingFeature')
-- Push to the Branch (git push origin feature/AmazingFeature)
-- Open a Pull Request
 
-### Contributors
+## Contributors
 <a href="https://github.com/SpencerVJones/UnsentText/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=SpencerVJones/UnsentText"/>
 </a>
 
 
 ## License
-Distributed under the MIT License. See LICENSE for more information.
-
+Copyright (c) 2026 Spencer Jones
+<br>
+All rights reserved.
+<br>
+Permission is granted to view this code for personal and educational purposes only.
+<br>
+No permission is granted to copy, modify, distribute, sublicense, or sell any portion of this code without explicit written consent from the author.
 
 
 ## Contact
