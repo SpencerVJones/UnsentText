@@ -94,7 +94,14 @@ This repository is structured as a **static site** bundled with **Webpack**, wit
 - 🧩 Simple structure (easy to extend with storage, tags, search, etc.)
 
 ## Demo
-🔗 **Live Demo:** [https://spencervjones.github.io/UnsentText/](https://spencervjones.github.io/UnsentText/)
+🔗 **Live:** [https://spencervjones.github.io/UnsentText/](https://spencervjones.github.io/UnsentText/)
+
+
+
+
+https://github.com/user-attachments/assets/9b9bf215-e2f2-4492-b4fa-9dc095188f42
+
+
 
 ## Project Structure
 ```bash
